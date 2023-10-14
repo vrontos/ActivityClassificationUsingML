@@ -1,0 +1,6 @@
+start_time,end_time,label
+0.0,30.208,train_calling
+30.208,75.408,train_cooking
+75.408,117.648,train_drinkingcoffee
+117.648,162.19799999999998,train_squatting
+162.19799999999998,190.748,train_waving
