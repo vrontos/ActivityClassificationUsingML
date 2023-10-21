@@ -12,8 +12,8 @@ from joblib import dump
 final_feature_matrix = np.load('final_feature_matrix.npy')
 
 # Define paths
-combined_video_path = os.path.join(os.getcwd(), "vids", "train2", "train_all_vids.mp4")
-labels_csv_path = os.path.join(os.getcwd(), "vids", "train2", "labels.csv")
+combined_video_path = os.path.join(os.getcwd(), "vids", "train", "train_all_vids.mp4")
+labels_csv_path = os.path.join(os.getcwd(), "vids", "train", "labels.csv")
 
 # Load labels from CSV
 labels_df = pd.read_csv(labels_csv_path)
@@ -28,9 +28,8 @@ labels_for_frames = [
     for idx in range(final_feature_matrix.shape[1])
 ]
 
-# TODO: add this 100 in config.py
 # Constants
-window_size = 60  # Define the appropriate window size for video frames
+window_size = 100  # Define the appropriate window size for video frames
 
 # Extracting statistical features
 X, y = [], []

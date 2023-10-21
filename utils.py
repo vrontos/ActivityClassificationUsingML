@@ -27,19 +27,22 @@ def add_axis_to_video(frame, length=100):
 
     
 def interpolate_nans(data):
+    """
+    Interpolates NaN values in the data using a linear interpolation.
+    
+    Parameters:
+    - data: 2D numpy array with potential NaN values.
+
+    Returns:
+    - A numpy array with NaN values replaced by interpolated values.
+    """
+    # Iterate through rows
     for row in data:
         nans = np.isnan(row)
         non_nans = ~nans
-
-        # If the entire row is NaNs, handle it (e.g., set to zero or some default value)
-        if np.all(nans):
-            row[:] = 0  # or any other default value or method of handling
-        else:
-            # Interpolate NaNs as you do now
-            row[nans] = np.interp(nans.nonzero()[0], non_nans.nonzero()[0], row[non_nans])
+        row[nans] = np.interp(nans.nonzero()[0], non_nans.nonzero()[0], row[non_nans])
 
     return data
-
 
 def plot_landmark_data(data, landmark_index, data_label, interpolated_data=None):
     """
@@ -163,25 +166,5 @@ def select_descriptors_to_visualize(descriptors):
     root.destroy()
     return selected_descriptors
 
-# Angle calculation function
-def angle_between_three_points(A, B, C):
-    BA = A - B
-    BC = C - B
-    dot_product = np.dot(BA, BC)
-    magnitude_BA = np.linalg.norm(BA)
-    magnitude_BC = np.linalg.norm(BC)
-    if magnitude_BA * magnitude_BC == 0:  # to handle division by zero
-        return 0
-    cos_theta = dot_product / (magnitude_BA * magnitude_BC)
-    theta = np.arccos(np.clip(cos_theta, -1.0, 1.0))
-    return np.degrees(theta)
 
-def calculate_angles(loaded_landmark_data, landmark_names, angle_definitions):
-    angles_matrix = []
-    for landmarks in angle_definitions.values():
-        coords = [loaded_landmark_data[:, 4 * landmark_names.index(lm): 4 * landmark_names.index(lm) + 3] for lm in landmarks]
-        processed_coords = [interpolate_nans(c.copy()) for c in coords]
-        angles = [angle_between_three_points(*[pc[:, i] for pc in processed_coords]) for i in range(loaded_landmark_data.shape[0])]
-        angles_matrix.append(angles)
-    return np.array(angles_matrix)
 

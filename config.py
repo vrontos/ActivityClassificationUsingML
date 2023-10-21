@@ -1,27 +1,4 @@
 DESIRED_LANDMARKS = [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
-
-LANDMARK_NAMES = [
-    'nose', 'left eye (inner)', 'left eye', 'left eye (outer)', 'right eye (inner)', 'right eye',
-    'right eye (outer)', 'left ear', 'right ear', 'mouth (left)', 'mouth (right)', 'left shoulder',
-    'right shoulder', 'left elbow', 'right elbow', 'left wrist', 'right wrist', 'left pinky',
-    'right pinky', 'left index', 'right index', 'left thumb', 'right thumb', 'left hip', 'right hip',
-    'left knee', 'right knee', 'left ankle', 'right ankle', 'left heel', 'right heel', 'left foot index',
-    'right foot index'
-]
-
-DESIRED_LANDMARK_NAMES = [LANDMARK_NAMES[i] for i in DESIRED_LANDMARKS]
-
-ANGLE_DEFINITIONS = {
-    'angle_right_elbow': ['right shoulder', 'right elbow', 'right wrist'],
-    'angle_right_shoulder': ['right elbow', 'right shoulder', 'right hip'],
-    'angle_right_hip': ['right shoulder', 'right hip', 'right knee'],
-    'angle_right_knee': ['right hip', 'right knee', 'right ankle'],
-    'angle_left_elbow': ['left shoulder', 'left elbow', 'left wrist'],
-    'angle_left_shoulder': ['left elbow', 'left shoulder', 'left hip'],
-    'angle_left_hip': ['left shoulder', 'left hip', 'left knee'],
-    'angle_left_knee': ['left hip', 'left knee', 'left ankle']
-}
-
 # 0 - nose
 # 1 - left eye (inner)
 # 2 - left eye

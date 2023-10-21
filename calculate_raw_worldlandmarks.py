@@ -1,25 +1,45 @@
 import cv2, mediapipe as mp, os
 import numpy as np
 from tqdm import tqdm
-from tkinter import filedialog
+import tkinter as tk
+from tkinter import ttk
 from config import DESIRED_LANDMARKS
 
 pose = mp.solutions.pose.Pose()
 
-# Use a file dialog to allow the user to select one or more MP4 files
-file_paths = filedialog.askopenfilenames(filetypes=[("MP4 files", "*.mp4")], title="Select Videos to calculate their world-landmarks!")
+# Find all MP4 files in the /vids directory
+root_dir = os.path.join(os.getcwd(), "vids")
+mp4_files = []
+for dirpath, dirnames, filenames in os.walk(root_dir):
+    for filename in [f for f in filenames if f.endswith(".mp4")]:
+        mp4_files.append(os.path.join(dirpath, filename))
 
-if not file_paths:
-    print("No files selected. Exiting.")
-    exit()
+selected_videos = []
 
-# Convert the result from tuple to list
-selected_videos = list(file_paths)
+def on_select():
+    selected_videos.extend([mp4_files[i] for i in range(len(mp4_files)) if var_values[i].get() == 1])
+    root.destroy()  # Destroy the window
+    
+root = tk.Tk()
+root.title("Select Videos")
+
+var_values = []
+for mp4_file in mp4_files:
+    video_name = os.path.basename(mp4_file).replace(".mp4", "")
+    landmark_path = os.path.join(os.getcwd(), "raw_worldlandmarks", f"{video_name}_raw_worldlandmarks.npy")
+    
+    display_name = "* " + mp4_file if not os.path.exists(landmark_path) else mp4_file
+
+    var = tk.IntVar()
+    ttk.Checkbutton(root, text=display_name, variable=var).pack(anchor='w', padx=10, pady=2)
+    var_values.append(var)
+
+ttk.Button(root, text="Start Processing", command=on_select).pack(pady=20)
+root.mainloop()
 
 # Ensure the raw_worldlandmarks directory exists
-raw_landmarks_base_dir = os.path.join(os.getcwd(), "raw_worldlandmarks")
-if not os.path.exists(raw_landmarks_base_dir):
-    os.makedirs(raw_landmarks_base_dir)
+if not os.path.exists(os.path.join(os.getcwd(), "raw_worldlandmarks")):
+    os.makedirs(os.path.join(os.getcwd(), "raw_worldlandmarks"))
 
 # Process each selected MP4 file
 for mp4_file in tqdm(selected_videos, desc="Processing videos", unit="video"):
@@ -39,18 +59,7 @@ for mp4_file in tqdm(selected_videos, desc="Processing videos", unit="video"):
             frame_data = [np.nan] * len(DESIRED_LANDMARKS) * 3 + [0] * len(DESIRED_LANDMARKS)
             
         world_landmark_data.append(frame_data)
-  
-    # Modify save_path to reflect the directory structure
-    root_dir = os.path.join(os.getcwd(), "vids")
-    relative_path = os.path.relpath(mp4_file, root_dir)  # Get the relative path of the mp4_file to the root directory
-    video_name = os.path.basename(relative_path).replace(".mp4", "")
-    landmark_sub_directory = os.path.dirname(relative_path)
-    landmark_directory = os.path.join(raw_landmarks_base_dir, landmark_sub_directory)
     
-    if not os.path.exists(landmark_directory):
-        os.makedirs(landmark_directory)
-    
-    save_path = os.path.join(landmark_directory, f"{video_name}_raw_worldlandmarks.npy")
-    
-    # TODO: add warning if there are cols/rows complete of NaN
+    video_name = os.path.basename(mp4_file).replace(".mp4", "")
+    save_path = os.path.join(os.getcwd(), "raw_worldlandmarks", f"{video_name}_raw_worldlandmarks.npy")
     np.save(save_path, world_landmark_data)

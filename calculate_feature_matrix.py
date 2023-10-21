@@ -1,6 +1,5 @@
 import numpy as np
-from utils import interpolate_nans, angle_between_three_points
-from config import DESIRED_LANDMARK_NAMES, ANGLE_DEFINITIONS
+from utils import interpolate_nans
 
 def calculate_feature_matrix(loaded_landmark_data):
     # Extract x, y, z coordinates and transpose
@@ -33,23 +32,13 @@ def calculate_feature_matrix(loaded_landmark_data):
     # Extract visibility data
     feature_visibilities = loaded_landmark_data[:, 3::4].T
     feature_visibilities_interpolated = interpolate_nans(feature_visibilities.copy())
-    
-    # Calculate angles
-    feature_angles = []
-    for idx, (angle_name, landmarks) in enumerate(ANGLE_DEFINITIONS.items()):
-        coords = [loaded_landmark_data[:, 4 * DESIRED_LANDMARK_NAMES.index(lm): 4 * DESIRED_LANDMARK_NAMES.index(lm) + 3] for lm in landmarks]
-        processed_coords = [interpolate_nans(c) for c in coords]
-        angles = [angle_between_three_points(*[pc[i] for pc in processed_coords]) for i in range(loaded_landmark_data.shape[0])]
-        feature_angles.append(angles)
-    feature_angles = np.array(feature_angles)
 
     # Stack all features
     final_feature_matrix = np.vstack((
         feature_coordinates_interpolated,
         feature_velocities,
         feature_joint_distances,
-        feature_visibilities_interpolated,
-        feature_angles
+        feature_visibilities_interpolated
     ))
     
     # Generate row descriptions
@@ -76,9 +65,5 @@ def calculate_feature_matrix(loaded_landmark_data):
     # Visibility data
     for i in range(num_landmarks):
         descriptors.append(f"visibility landmark {i}")
-        
-    # Angle data
-    for angle_name in ANGLE_DEFINITIONS.keys():
-        descriptors.append(angle_name)
 
     return final_feature_matrix, num_landmarks, descriptors
