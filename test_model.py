@@ -3,29 +3,35 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from joblib import load
-from utils import get_video_frame_rate
+from utils import get_video_frame_rate, select_raw_landmark_files
 from sklearn.metrics import accuracy_score
-
+from calculate_feature_matrix import calculate_feature_matrix
 
 # Load the trained model
 clf = load("trained_random_forest_3d_model.joblib")
 
-# Load the processed feature matrix for the testing video
-final_feature_matrix_test = np.load('final_feature_matrix.npy')
+file_path = select_raw_landmark_files()
+loaded_landmark_data = np.load(file_path[0])
 
+final_feature_matrix, num_landmarks, _ = calculate_feature_matrix(loaded_landmark_data)
+
+# TODO: add this 100 in config.py
 # Constants
-window_size = 100
+window_size = 60
 
 # Extracting statistical features for test data
 X_test = []
-frames_test = final_feature_matrix_test.shape[1]
+frames_test = final_feature_matrix.shape[1]
 for i in range(0, frames_test - window_size + 1):
-    window_data_test = final_feature_matrix_test[:, i:i+window_size].T
+    window_data_test = final_feature_matrix[:, i:i+window_size].T
     mean_vals_test = np.mean(window_data_test, axis=0)
     std_vals_test = np.std(window_data_test, axis=0)
     min_vals_test = np.min(window_data_test, axis=0)
     max_vals_test = np.max(window_data_test, axis=0)
     features_test = np.hstack([mean_vals_test, std_vals_test, min_vals_test, max_vals_test])
+    # TODO: skewness
+    # TODO: kurtosis
+    # TODO: fft
     X_test.append(features_test)
 
 X_test = np.array(X_test)
@@ -34,7 +40,7 @@ X_test = np.array(X_test)
 y_pred_test = clf.predict(X_test)
 
 # Load the correct labels
-labels_csv_path_test = os.path.join(os.getcwd(), "vids", "test", "labels_test_vid2.csv")
+labels_csv_path_test = os.path.join(os.getcwd(), "vids", "test", "labels_test_10_activities_basic.csv")
 labels_df_test = pd.read_csv(labels_csv_path_test)
 
 # Get video frame rate for test video
@@ -44,7 +50,7 @@ frame_rate_test = get_video_frame_rate(combined_video_path_test)
 # Convert the time-based labels to frame-based
 labels_for_frames_test = [
     labels_df_test[(labels_df_test['start_time'] <= idx / frame_rate_test) & 
-                   (labels_df_test['end_time'] > idx / frame_rate_test)]['label'].values[0]
+                    (labels_df_test['end_time'] > idx / frame_rate_test)]['label'].values[0]
     for idx in range(frames_test - window_size + 1)
 ]
 
