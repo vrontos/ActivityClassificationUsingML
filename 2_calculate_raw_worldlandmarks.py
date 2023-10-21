@@ -2,12 +2,12 @@ import cv2, mediapipe as mp, os
 import numpy as np
 from tqdm import tqdm
 from tkinter import filedialog
-from config import DESIRED_LANDMARKS
+from utils import DESIRED_LANDMARKS, check_for_rows_or_cols_of_nans
 
 pose = mp.solutions.pose.Pose()
 
 # Use a file dialog to allow the user to select one or more MP4 files
-file_paths = filedialog.askopenfilenames(filetypes=[("MP4 files", "*.mp4")], title="Select Videos to calculate their world-landmarks!")
+file_paths = filedialog.askopenfilenames(filetypes=[("MP4 files", "*.mp4")], title="Select One Or More Videos!")
 
 if not file_paths:
     print("No files selected. Exiting.")
@@ -23,6 +23,22 @@ if not os.path.exists(raw_landmarks_base_dir):
 
 # Process each selected MP4 file
 for mp4_file in tqdm(selected_videos, desc="Processing videos", unit="video"):
+    
+    # Modify save_path to reflect the directory structure
+    root_dir = os.path.join(os.getcwd(), "vids")
+    relative_path = os.path.relpath(mp4_file, root_dir)  # Get the relative path of the mp4_file to the root directory
+    video_name = os.path.basename(relative_path).replace(".mp4", "")
+    landmark_sub_directory = os.path.dirname(relative_path)
+    landmark_directory = os.path.join(raw_landmarks_base_dir, landmark_sub_directory)
+    
+    if not os.path.exists(landmark_directory):
+        os.makedirs(landmark_directory)
+    
+    save_path = os.path.join(landmark_directory, f"{video_name}_raw_worldlandmarks.npy")
+
+    print(f"\n\nThe selected video is: {mp4_file}")
+    print(f"\nThe world landmarks will be saved here: {save_path}\n")
+
     cap = cv2.VideoCapture(mp4_file)
     world_landmark_data = []
     
@@ -40,17 +56,7 @@ for mp4_file in tqdm(selected_videos, desc="Processing videos", unit="video"):
             
         world_landmark_data.append(frame_data)
   
-    # Modify save_path to reflect the directory structure
-    root_dir = os.path.join(os.getcwd(), "vids")
-    relative_path = os.path.relpath(mp4_file, root_dir)  # Get the relative path of the mp4_file to the root directory
-    video_name = os.path.basename(relative_path).replace(".mp4", "")
-    landmark_sub_directory = os.path.dirname(relative_path)
-    landmark_directory = os.path.join(raw_landmarks_base_dir, landmark_sub_directory)
+    # Check for rows or columns full of NaNs
+    check_for_rows_or_cols_of_nans(world_landmark_data)
     
-    if not os.path.exists(landmark_directory):
-        os.makedirs(landmark_directory)
-    
-    save_path = os.path.join(landmark_directory, f"{video_name}_raw_worldlandmarks.npy")
-    
-    # TODO: add warning if there are cols/rows complete of NaN
     np.save(save_path, world_landmark_data)

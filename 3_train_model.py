@@ -3,14 +3,15 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
+from sklearn.metrics import accuracy_score
 from joblib import dump
 from calculate_feature_matrix import calculate_feature_matrix
 from utils import select_raw_landmark_files, get_video_frame_rate
 import matplotlib.pyplot as plt
+from utils import WINDOW_SIZE
 
 # Select the raw landmarks file
-file_path = select_raw_landmark_files()[0]
+file_path = select_raw_landmark_files("raw_worldlandmarks")[0]
 
 # Load landmarks data
 loaded_landmark_data = np.load(file_path)
@@ -46,22 +47,23 @@ labels_for_frames = [
     for idx in range(final_feature_matrix.shape[1])
 ]
 
-# TODO: add this 100 in config.py
-# Constants
-window_size = 60  # Define the appropriate window size for video frames
-
 # Extracting statistical features
 X, y = [], []
 frames = final_feature_matrix.shape[1]
-for i in range(0, frames - window_size + 1):
-    window_data = final_feature_matrix[:, i:i+window_size].T  # Extracting the window of frames
+for i in range(0, frames - WINDOW_SIZE + 1):
+    window_data = final_feature_matrix[:, i:i+WINDOW_SIZE].T  # Extracting the window of frames
     mean_vals = np.mean(window_data, axis=0)
     std_vals = np.std(window_data, axis=0)
     min_vals = np.min(window_data, axis=0)
     max_vals = np.max(window_data, axis=0)
+    #epsilon = 1e-8
+    #skewness_vals = np.divide((window_data - mean_vals) ** 3, (std_vals + epsilon) ** 3).mean(axis=0)
+    
     features = np.hstack([mean_vals, std_vals, min_vals, max_vals])
+    #features = np.hstack([mean_vals, std_vals, min_vals, max_vals, skewness_vals])
+
     X.append(features)
-    y.append(labels_for_frames[i + window_size - 1])
+    y.append(labels_for_frames[i + WINDOW_SIZE - 1])
 
 X = np.array(X)
 y = np.array(y)
@@ -74,7 +76,7 @@ clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 
 # Visualizing the actual vs predicted classes
-frame_indices = np.arange(window_size-1, len(labels_for_frames))
+frame_indices = np.arange(WINDOW_SIZE-1, len(labels_for_frames))
 test_frame_indices = frame_indices[test_indices]
 
 # Create a figure and axis
@@ -92,6 +94,9 @@ plt.title('Actual vs Predicted Classes')
 plt.legend()
 plt.grid(True)
 plt.show()
+
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy * 100:.2f}%")
 
 # Save the trained model
 model_path = "trained_random_forest_3d_model.joblib"

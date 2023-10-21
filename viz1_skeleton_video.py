@@ -1,8 +1,7 @@
 import cv2, mediapipe as mp, os
 import tkinter as tk
 from tkinter import filedialog
-from utils import add_axis_to_video
-from config import DESIRED_LANDMARKS
+from utils import DESIRED_LANDMARKS
 
 pose = mp.solutions.pose.Pose()
 
@@ -46,7 +45,6 @@ while cap.isOpened():
             cv2.line(frame, start_pos, end_pos, (255, 255, 255), 2)  # White for all connections
 
 
-    add_axis_to_video(frame)  # Commenting out for now to check the landmark drawing
     cv2.imshow('Pose Estimation', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'): break
 

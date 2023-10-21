@@ -1,31 +1,70 @@
 import cv2, os
-import matplotlib.pyplot as plt
 import numpy as np
 import subprocess
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 
-def add_axis_to_video(frame, length=100):
-    """Add a normalized coordinate axis to a frame."""
-    h, w, _ = frame.shape
-    
-    # Origin at upper-left corner
-    origin = (50, 50)
-    
-    # Define x and y axis endpoints based on length
-    x_axis_end = (origin[0] + length, origin[1])
-    y_axis_end = (origin[0], origin[1] + length)  # Notice the change here
-    
-    # Draw axis lines
-    cv2.line(frame, origin, x_axis_end, (0, 255, 0), 2)
-    cv2.line(frame, origin, y_axis_end, (0, 0, 255), 2)
-    
-    # Axis labels
-    cv2.putText(frame, "x", x_axis_end, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-    cv2.putText(frame, "y", y_axis_end, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+DESIRED_LANDMARKS = [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 
-    
+# 0 - nose
+# 1 - left eye (inner)
+# 2 - left eye
+# 3 - left eye (outer)
+# 4 - right eye (inner)
+# 5 - right eye
+# 6 - right eye (outer)
+# 7 - left ear
+# 8 - right ear
+# 9 - mouth (left)
+# 10 - mouth (right)
+# 11 - left shoulder
+# 12 - right shoulder
+# 13 - left elbow
+# 14 - right elbow
+# 15 - left wrist
+# 16 - right wrist
+# 17 - left pinky
+# 18 - right pinky
+# 19 - left index
+# 20 - right index
+# 21 - left thumb
+# 22 - right thumb
+# 23 - left hip
+# 24 - right hip
+# 25 - left knee
+# 26 - right knee
+# 27 - left ankle
+# 28 - right ankle
+# 29 - left heel
+# 30 - right heel
+# 31 - left foot index
+# 32 - right foot index
+
+LANDMARK_NAMES = [
+    'nose', 'left eye (inner)', 'left eye', 'left eye (outer)', 'right eye (inner)', 'right eye',
+    'right eye (outer)', 'left ear', 'right ear', 'mouth (left)', 'mouth (right)', 'left shoulder',
+    'right shoulder', 'left elbow', 'right elbow', 'left wrist', 'right wrist', 'left pinky',
+    'right pinky', 'left index', 'right index', 'left thumb', 'right thumb', 'left hip', 'right hip',
+    'left knee', 'right knee', 'left ankle', 'right ankle', 'left heel', 'right heel', 'left foot index',
+    'right foot index'
+]
+
+DESIRED_LANDMARK_NAMES = [LANDMARK_NAMES[i] for i in DESIRED_LANDMARKS]
+
+ANGLE_DEFINITIONS = {
+    'angle_right_elbow': ['right shoulder', 'right elbow', 'right wrist'],
+    'angle_right_shoulder': ['right elbow', 'right shoulder', 'right hip'],
+    'angle_right_hip': ['right shoulder', 'right hip', 'right knee'],
+    'angle_right_knee': ['right hip', 'right knee', 'right ankle'],
+    'angle_left_elbow': ['left shoulder', 'left elbow', 'left wrist'],
+    'angle_left_shoulder': ['left elbow', 'left shoulder', 'left hip'],
+    'angle_left_hip': ['left shoulder', 'left hip', 'left knee'],
+    'angle_left_knee': ['left hip', 'left knee', 'left ankle']
+}
+
+WINDOW_SIZE = 60  # Define the appropriate window size for video frames
+
 def interpolate_nans(data):
     for row in data:
         nans = np.isnan(row)
@@ -40,46 +79,8 @@ def interpolate_nans(data):
 
     return data
 
-
-def plot_landmark_data(data, landmark_index, data_label, interpolated_data=None):
-    """
-    Plot landmark data for a given landmark index.
-
-    Parameters:
-    - data: The main data array (feature_coordinates in your code).
-    - landmark_index: Index of the landmark to plot.
-    - data_label: Title/Label for the main data.
-    - interpolated_data: If provided, this data is plotted alongside the main data.
-    """
-
-    start_idx = 3 * landmark_index  # x-coordinate index
-    landmark_coords = data[start_idx:start_idx + 3, :]  # x, y, z rows of the landmark
-
-    # Create the plot
-    fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
-
-    # Plot the x, y, z coordinates for the landmark
-    for idx, coord in enumerate(['x', 'y', 'z']):
-        # Thick line for the main data
-        axes[idx].plot(landmark_coords[idx], label=data_label, color='blue', linestyle='-', linewidth=2)
-        
-        # If interpolated data is provided, plot it as well
-        if interpolated_data is not None:
-            interpolated_coords = interpolated_data[start_idx:start_idx + 3, :]
-            # Thin open circle for interpolated data
-            axes[idx].plot(interpolated_coords[idx], label='Interpolated Data', color='red', linestyle='', marker='o', markerfacecolor='none', markersize=6)
-        
-        axes[idx].legend()
-        axes[idx].set_ylabel(f"{coord} Value")
-        axes[idx].grid(True)
-
-    axes[2].set_xlabel("Frame Index")
-    fig.suptitle(f"Data for Landmark {landmark_index}")
-
-    plt.tight_layout()
-    plt.show()
-
 def get_video_frame_rate(video_path):
+    # TODO: The fps in Wyze v3 changes to daytime and nighttime, so consider this when training and testing the model
     """Retrieve the frame rate of the video using ffprobe."""
     cmd_output = subprocess.check_output(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'default=noprint_wrappers=1:nokey=1', video_path]).decode('utf-8').strip()
     num, denom = map(int, cmd_output.split('/'))
@@ -110,14 +111,24 @@ def resize_frame(frame, width):
     new_height = int(new_width / aspect_ratio)
     return cv2.resize(frame, (new_width, new_height))
 
-def select_raw_landmark_files():
+def select_raw_landmark_files(initial_dir=None):
     root = tk.Tk()
     root.withdraw()  # Hide the root window
+    
+    if initial_dir:
+        initial_dir_path = os.path.join(os.getcwd(), initial_dir)
+    else:
+        initial_dir_path = os.getcwd()
+        
     file_path = filedialog.askopenfilename(title="Select the raw landmarks file", 
-                                           filetypes=(("Numpy files", "*.npy"), ("All files", "*.*")))
+                                           filetypes=(("Numpy files", "*.npy"), ("All files", "*.*")),
+                                           initialdir=initial_dir_path)
+    
     root.destroy()  # Destroy the root window
+    
     if not file_path:
         raise ValueError("No file was selected.")
+    
     return [file_path]
 
 def select_descriptors_to_visualize(descriptors):
@@ -203,3 +214,17 @@ def check_feature_health(final_feature_matrix, num_landmarks):
     min_visibility = np.min(final_feature_matrix[-num_landmarks:])
     max_visibility = np.max(final_feature_matrix[-num_landmarks:])
     print(f"Visibility value range: {min_visibility} to {max_visibility}")
+    
+def check_for_rows_or_cols_of_nans(data):
+    # Convert to NumPy array if not already
+    data_np = np.array(data)
+
+    # Check for rows full of NaNs
+    nan_rows = np.where(np.all(np.isnan(data_np), axis=1))[0]
+    if nan_rows.size > 0:
+        print(f"Warning: Rows {nan_rows} are full of NaNs.")
+
+    # Check for columns full of NaNs
+    nan_cols = np.where(np.all(np.isnan(data_np), axis=0))[0]
+    if nan_cols.size > 0:
+        print(f"Warning: Columns {nan_cols} are full of NaNs.")

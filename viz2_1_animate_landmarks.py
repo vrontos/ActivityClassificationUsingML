@@ -62,7 +62,7 @@ ax.set(ylim3d=(-1, 1), ylabel='Y')
 ax.set(zlim3d=(-1, 1), zlabel='Z')
 
 # Number of frames the animation should run for
-num_frames = min(150, len(loaded_landmark_data))  # Using the first 150 frames or all available frames, whichever is smaller
+num_frames = min(500, len(loaded_landmark_data))  # Using the first 150 frames or all available frames, whichever is smaller
 
 # Creating the Animation object
 ani = animation.FuncAnimation(

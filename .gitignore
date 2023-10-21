@@ -154,3 +154,6 @@ cython_debug/
 # Stop tracking vids and raw landmarks
 vids/
 raw_worldlandmarks/
+
+# Dont track the todo.txt
+/TODO.txt

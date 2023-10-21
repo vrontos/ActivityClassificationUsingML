@@ -1,6 +1,5 @@
 import numpy as np
-from utils import interpolate_nans, angle_between_three_points, check_feature_health
-from config import DESIRED_LANDMARK_NAMES, ANGLE_DEFINITIONS
+from utils import interpolate_nans, angle_between_three_points, check_feature_health, DESIRED_LANDMARK_NAMES, ANGLE_DEFINITIONS
 
 def calculate_feature_matrix(loaded_landmark_data):
     # Extract x, y, z coordinates and transpose

@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from calculate_feature_matrix import calculate_feature_matrix
-from utils import select_raw_landmark_files
+from utils import select_raw_landmark_files, DESIRED_LANDMARK_NAMES, ANGLE_DEFINITIONS
 import mplcursors
-from config import DESIRED_LANDMARK_NAMES
 
 
 def plot_selected_feature(feature_matrix, num_landmarks, descriptors, ax, selected_feature, cursor=None):
@@ -21,14 +20,17 @@ def plot_selected_feature(feature_matrix, num_landmarks, descriptors, ax, select
         title = 'Landmark Velocities Over Time'
         labels = [f"{name} Velocity {d}" for name in DESIRED_LANDMARK_NAMES for d in ['x', 'y', 'z']]
     elif selected_feature == "Pairwise Distances":
-        data = feature_matrix[num_landmarks*6:num_landmarks*6 + num_landmarks**2]
+        data = feature_matrix[num_landmarks*6:num_landmarks*6 + num_landmarks**2 - num_landmarks]
         title = 'Pairwise Distances Over Time'
-        # The pairwise distances label generation is a bit more complex since it involves combinations of landmarks
-        labels = [f"Distance {name1} to {name2}" for index1, name1 in enumerate(DESIRED_LANDMARK_NAMES) for index2, name2 in enumerate(DESIRED_LANDMARK_NAMES) if index2 >= index1]
+        labels = [f"Distance {name1} to {name2}" for index1, name1 in enumerate(DESIRED_LANDMARK_NAMES) for index2, name2 in enumerate(DESIRED_LANDMARK_NAMES) if index1 != index2]
     elif selected_feature == "Visibilities":
-        data = feature_matrix[-num_landmarks:]
+        data = feature_matrix[-num_landmarks - len(ANGLE_DEFINITIONS):-len(ANGLE_DEFINITIONS)]
         title = 'Visibility for Landmarks Over Time'
         labels = [f"{name} Visibility" for name in DESIRED_LANDMARK_NAMES]
+    elif selected_feature == "Angles":
+        data = feature_matrix[-len(ANGLE_DEFINITIONS):]
+        title = 'Angles Over Time'
+        labels = list(ANGLE_DEFINITIONS.keys())
 
     lines = ax.plot(data.T)
     ax.set_title(title)
@@ -46,11 +48,9 @@ def plot_selected_feature(feature_matrix, num_landmarks, descriptors, ax, select
     plt.draw()
     return cursor  # Return the new cursor
 
-
-
 def interactive_plot(feature_matrix, num_landmarks, descriptors):
     fig, ax = plt.subplots(figsize=(8, 8))
-    feature_options = ["Positions", "Velocities", "Pairwise Distances", "Visibilities"]
+    feature_options = ["Positions", "Velocities", "Pairwise Distances", "Visibilities", "Angles"]
     current_index = 0
     cursor = None  # Initially no cursor
 
@@ -59,13 +59,12 @@ def interactive_plot(feature_matrix, num_landmarks, descriptors):
     def onclick(event):
         nonlocal current_index, cursor
         if event.inaxes is None: return
-        current_index = (current_index + 1) % 4
+        current_index = (current_index + 1) % len(feature_options)
         cursor = plot_selected_feature(feature_matrix, num_landmarks, descriptors, ax, feature_options[current_index], cursor)
         
     cid = fig.canvas.mpl_connect('button_press_event', onclick)
 
     plt.show()
-
 
 file_path = select_raw_landmark_files()
 loaded_landmark_data = np.load(file_path[0])
