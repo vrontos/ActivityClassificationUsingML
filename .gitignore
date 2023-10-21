@@ -153,4 +153,4 @@ cython_debug/
 
 # Stop tracking vids and raw landmarks
 vids/
-raw_landmarks
+raw_worldlandmarks/
