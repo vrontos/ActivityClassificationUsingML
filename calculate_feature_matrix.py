@@ -1,5 +1,5 @@
 import numpy as np
-from utils import interpolate_nans, angle_between_three_points
+from utils import interpolate_nans, angle_between_three_points, check_feature_health
 from config import DESIRED_LANDMARK_NAMES, ANGLE_DEFINITIONS
 
 def calculate_feature_matrix(loaded_landmark_data):
@@ -51,6 +51,9 @@ def calculate_feature_matrix(loaded_landmark_data):
         feature_visibilities_interpolated,
         feature_angles
     ))
+    
+    # Check briefly the "health" of the features (e.g. if NaNs, Inf are found)
+    check_feature_health(final_feature_matrix, num_landmarks)
     
     # Generate row descriptions
     descriptors = []

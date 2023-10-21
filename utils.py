@@ -110,7 +110,6 @@ def resize_frame(frame, width):
     new_height = int(new_width / aspect_ratio)
     return cv2.resize(frame, (new_width, new_height))
 
-
 def select_raw_landmark_files():
     root = tk.Tk()
     root.withdraw()  # Hide the root window
@@ -185,3 +184,22 @@ def calculate_angles(loaded_landmark_data, landmark_names, angle_definitions):
         angles_matrix.append(angles)
     return np.array(angles_matrix)
 
+def check_feature_health(final_feature_matrix, num_landmarks):
+    print("Shape of final feature matrix:", final_feature_matrix.shape)
+    
+    if np.isnan(final_feature_matrix).any():
+        print("Warning: NaN values detected in the feature matrix!")
+    else:
+        print("No NaN values in the feature matrix.")
+    
+    print("Min and Max values in the feature matrix:")
+    print(np.min(final_feature_matrix), np.max(final_feature_matrix))
+    
+    if np.isinf(final_feature_matrix).any():
+        print("Warning: Infinite values detected in the feature matrix!")
+    else:
+        print("No Infinite values in the feature matrix.")
+    
+    min_visibility = np.min(final_feature_matrix[-num_landmarks:])
+    max_visibility = np.max(final_feature_matrix[-num_landmarks:])
+    print(f"Visibility value range: {min_visibility} to {max_visibility}")

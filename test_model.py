@@ -3,15 +3,17 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from joblib import load
-from utils import get_video_frame_rate
+from utils import get_video_frame_rate, select_raw_landmark_files
 from sklearn.metrics import accuracy_score
-
+from calculate_feature_matrix import calculate_feature_matrix
 
 # Load the trained model
 clf = load("trained_random_forest_3d_model.joblib")
 
-# Load the processed feature matrix for the testing video
-final_feature_matrix_test = np.load('final_feature_matrix.npy')
+file_path = select_raw_landmark_files()
+loaded_landmark_data = np.load(file_path[0])
+
+final_feature_matrix, num_landmarks, _ = calculate_feature_matrix(loaded_landmark_data)
 
 # TODO: add this 100 in config.py
 # Constants
@@ -19,9 +21,9 @@ window_size = 60
 
 # Extracting statistical features for test data
 X_test = []
-frames_test = final_feature_matrix_test.shape[1]
+frames_test = final_feature_matrix.shape[1]
 for i in range(0, frames_test - window_size + 1):
-    window_data_test = final_feature_matrix_test[:, i:i+window_size].T
+    window_data_test = final_feature_matrix[:, i:i+window_size].T
     mean_vals_test = np.mean(window_data_test, axis=0)
     std_vals_test = np.std(window_data_test, axis=0)
     min_vals_test = np.min(window_data_test, axis=0)
