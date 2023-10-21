@@ -4,40 +4,22 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-from joblib import dump
-from calculate_feature_matrix import calculate_feature_matrix
-from utils import select_raw_landmark_files, get_video_frame_rate
+from utils import get_video_frame_rate
 import matplotlib.pyplot as plt
+from joblib import dump
 
-# Select the raw landmarks file
-file_path = select_raw_landmark_files()[0]
+# Load feature matrix
+final_feature_matrix = np.load('final_feature_matrix.npy')
 
-# Load landmarks data
-loaded_landmark_data = np.load(file_path)
-
-# Calculate the final feature matrix
-final_feature_matrix, num_landmarks, descriptors = calculate_feature_matrix(loaded_landmark_data)
-
-# Construct paths based on the selected landmarks file
-base_dir = os.getcwd()
-landmarks_rel_path = os.path.relpath(file_path, os.path.join(base_dir, "raw_worldlandmarks"))
-video_rel_path = landmarks_rel_path.replace("_raw_worldlandmarks.npy", ".mp4")
-labels_rel_path = os.path.join(os.path.dirname(video_rel_path), "labels.csv")
-
-video_path = os.path.join(base_dir, "vids", video_rel_path)
-labels_csv_path = os.path.join(base_dir, "vids", labels_rel_path)
-
-# Check if the video file and labels file exist
-if not os.path.exists(video_path):
-    raise FileNotFoundError(f"Video file not found: {video_path}")
-if not os.path.exists(labels_csv_path):
-    raise FileNotFoundError(f"Labels CSV file not found: {labels_csv_path}")
+# Define paths
+combined_video_path = os.path.join(os.getcwd(), "vids", "train2", "train_all_vids.mp4")
+labels_csv_path = os.path.join(os.getcwd(), "vids", "train2", "labels.csv")
 
 # Load labels from CSV
 labels_df = pd.read_csv(labels_csv_path)
 
 # Get video frame rate
-frame_rate = get_video_frame_rate(video_path)
+frame_rate = get_video_frame_rate(combined_video_path)
 
 # Associate each frame with its corresponding label
 labels_for_frames = [
