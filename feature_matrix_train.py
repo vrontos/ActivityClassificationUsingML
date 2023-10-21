@@ -40,14 +40,12 @@ loaded_landmark_data = np.load(loaded_landmark_data_path)
 final_feature_matrix, num_landmarks, _ = calculate_feature_matrix(loaded_landmark_data)
 
 # Example: Plotting the X coordinate of the first landmark over time
-plt.figure()  # Create a new figure
 plt.plot(final_feature_matrix[0])
 plt.title('X coordinate of 1st Landmark over Time')
 plt.xlabel('Frame')
 plt.ylabel('X Coordinate')
 plt.show()
 
-plt.figure()  # Create a new figure
 plt.hist(final_feature_matrix.ravel(), bins=50)
 plt.title('Feature Distribution')
 plt.xlabel('Value')
