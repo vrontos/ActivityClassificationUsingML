@@ -8,7 +8,7 @@ from joblib import dump
 from calculate_feature_matrix import calculate_feature_matrix
 from utils import select_raw_landmark_files, get_video_frame_rate
 import matplotlib.pyplot as plt
-from utils import WINDOW_SIZE, plot_feature_importances
+from utils import WINDOW_SIZE
 
 # Select the raw landmarks file
 file_path = select_raw_landmark_files("raw_worldlandmarks")[0]
@@ -51,7 +51,6 @@ labels_for_frames = [
 X, y = [], []
 frames = final_feature_matrix.shape[1]
 for i in range(0, frames - WINDOW_SIZE + 1):
-    # TODO: it seems same like in test model, so maybe put in calculate
     window_data = final_feature_matrix[:, i:i+WINDOW_SIZE].T  # Extracting the window of frames
     mean_vals = np.mean(window_data, axis=0)
     std_vals = np.std(window_data, axis=0)
@@ -80,21 +79,8 @@ y_pred = clf.predict(X_test)
 frame_indices = np.arange(WINDOW_SIZE-1, len(labels_for_frames))
 test_frame_indices = frame_indices[test_indices]
 
-# Create a figure and axis
-plt.figure(figsize=(15, 6))
-plt.scatter(test_frame_indices, y_test, c='blue', marker='o', s=3, label='Actual')
-plt.scatter(test_frame_indices, y_pred, c='red', marker='x', s=3, label='Predicted')
-
 # Highlight differences/errors between actual and predicted
 errors = y_test != y_pred
-plt.scatter(test_frame_indices[errors], y_test[errors], c='yellow', marker='s', s=30, label='Errors', alpha=0.5)
-
-plt.xlabel('Frame')
-plt.ylabel('Class')
-plt.title('Actual vs Predicted Classes')
-plt.legend()
-plt.grid(True)
-plt.show()
 
 accuracy = accuracy_score(y_test, y_pred)
 print(f"Accuracy: {accuracy * 100:.2f}%")
@@ -103,4 +89,38 @@ print(f"Accuracy: {accuracy * 100:.2f}%")
 model_path = "trained_random_forest_3d_model.joblib"
 dump(clf, model_path)
 
-plot_feature_importances(clf, descriptors)
+# # Get feature importances
+importances = clf.feature_importances_
+
+# Assuming 'descriptors' is a list of feature names
+feature_groups = {
+    'position': [],
+    'velocity': [],
+    'distances': [],
+    'visibility': [],
+    'angles': [],
+}
+
+# Assign each descriptor to its feature group
+for descriptor in descriptors:
+    for group in feature_groups:
+        if group in descriptor:
+            feature_groups[group].append(descriptor)
+
+# Calculate importance for each feature group
+group_importances = {}
+for group, features in feature_groups.items():
+    indices = [descriptors.index(feature) for feature in features]
+    group_importance = np.sum([importances[index] for index in indices])
+    group_importances[group] = group_importance
+
+# Normalize importances so they sum to 1
+total_importance = sum(group_importances.values())
+normalized_importances = {group: importance / total_importance for group, importance in group_importances.items()}
+
+print(normalized_importances)
+
+plt.bar(normalized_importances.keys(), normalized_importances.values())
+plt.ylabel('Importance')
+plt.title('Feature Group Importances')
+plt.show()

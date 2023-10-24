@@ -14,11 +14,23 @@ vid_path = filedialog.askopenfilename(initialdir=os.path.join(os.getcwd(), "vids
 if not vid_path:
     exit()
 
-cap = cv2.VideoCapture(vid_path)
+# Ask user for frame range
+start_frame_input = input("From which frame? (click Enter to play the whole video): ")
+if start_frame_input.isdigit():
+    start_frame = int(start_frame_input)
+    end_frame_input = input("Until which frame? (click Enter to not specify): ")
+    end_frame = int(end_frame_input) if end_frame_input.isdigit() else float('inf')
+else:
+    start_frame, end_frame = 0, float('inf')
 
-while cap.isOpened():
+cap = cv2.VideoCapture(vid_path)
+current_frame = 0
+
+while cap.isOpened() and current_frame <= end_frame:
     ret, frame = cap.read()
-    if not ret: break
+    if not ret or current_frame < start_frame:
+        current_frame += 1
+        continue
 
     frame = cv2.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
 
@@ -44,11 +56,13 @@ while cap.isOpened():
             end_pos = (int(landmarks.landmark[end_idx].x * frame.shape[1]), int(landmarks.landmark[end_idx].y * frame.shape[0]))
             cv2.line(frame, start_pos, end_pos, (255, 255, 255), 2)  # White for all connections
 
+    # Display current frame number
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(frame, f'Frame: {current_frame}', (10, 30), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
     cv2.imshow('Pose Estimation', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'): break
+    current_frame += 1
 
 cap.release()
 cv2.destroyAllWindows()
-
-

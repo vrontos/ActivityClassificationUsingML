@@ -2,6 +2,7 @@ import cv2, os
 import numpy as np
 import subprocess
 import tkinter as tk
+import matplotlib.pyplot as plt
 from tkinter import ttk
 from tkinter import filedialog
 
@@ -196,6 +197,7 @@ def calculate_angles(loaded_landmark_data, landmark_names, angle_definitions):
     return np.array(angles_matrix)
 
 def check_feature_health(final_feature_matrix, num_landmarks):
+    # TODO: correct the visibility-angles bug and generally make it more beautiful.
     print("Shape of final feature matrix:", final_feature_matrix.shape)
     
     if np.isnan(final_feature_matrix).any():
@@ -228,3 +230,65 @@ def check_for_rows_or_cols_of_nans(data):
     nan_cols = np.where(np.all(np.isnan(data_np), axis=0))[0]
     if nan_cols.size > 0:
         print(f"Warning: Columns {nan_cols} are full of NaNs.")
+
+def plot_feature_importances(clf, descriptors):
+    # Get feature importances
+    importances = clf.feature_importances_
+
+    # Assuming 'descriptors' is a list of feature names
+    statistical_features = ['mean', 'std', 'min', 'max']
+
+    # Calculate importance for each statistical feature
+    feature_importances = {}
+    num_original_features = len(descriptors)
+    for i, stat_feature in enumerate(statistical_features):
+        start_idx = i * num_original_features
+        end_idx = start_idx + num_original_features
+        feature_importance = np.sum(importances[start_idx:end_idx])
+        feature_importances[stat_feature] = feature_importance
+
+    # Normalize importances so they sum to 1
+    total_importance = sum(feature_importances.values())
+    normalized_importances = {feature: importance / total_importance for feature, importance in feature_importances.items()}
+
+    # Print and plot statistical feature importances
+    print("Statistical Feature Importances:", normalized_importances)
+    plt.figure()
+    plt.bar(normalized_importances.keys(), normalized_importances.values())
+    plt.ylabel('Importance')
+    plt.title('Statistical Feature Importances')
+    plt.show()
+
+    # Feature Grouping and Importance Calculation
+    feature_groups = {
+        'position': [],
+        'velocity': [],
+        'distances': [],
+        'visibility': [],
+        'angles': [],
+    }
+
+    # Assign each descriptor to its feature group
+    for descriptor in descriptors:
+        for group in feature_groups:
+            if group in descriptor:
+                feature_groups[group].append(descriptor)
+
+    # Calculate importance for each feature group
+    group_importances = {}
+    for group, features in feature_groups.items():
+        indices = [descriptors.index(feature) for feature in features]
+        group_importance = np.sum([importances[index] for index in indices])
+        group_importances[group] = group_importance
+
+    # Normalize importances for feature groups
+    total_importance = sum(group_importances.values())
+    normalized_group_importances = {group: importance / total_importance for group, importance in group_importances.items()}
+
+    # Print and plot feature group importances
+    print("Feature Group Importances:", normalized_group_importances)
+    plt.figure()
+    plt.bar(normalized_group_importances.keys(), normalized_group_importances.values())
+    plt.ylabel('Importance')
+    plt.title('Feature Group Importances')
+    plt.show()

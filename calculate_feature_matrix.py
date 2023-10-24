@@ -2,6 +2,7 @@ import numpy as np
 from utils import interpolate_nans, angle_between_three_points, check_feature_health, DESIRED_LANDMARK_NAMES, ANGLE_DEFINITIONS
 
 def calculate_feature_matrix(loaded_landmark_data):
+    # TODO: if i give flag ,"Norm" or ,"Std", it should give back the data accordingly
     # Extract x, y, z coordinates and transpose
     feature_coordinates = np.array(loaded_landmark_data)[:, ::4]
     feature_coordinates = np.hstack((feature_coordinates, loaded_landmark_data[:, 1::4]))
