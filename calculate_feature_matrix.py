@@ -1,7 +1,9 @@
 import numpy as np
 from utils import interpolate_nans, angle_between_three_points, check_feature_health, DESIRED_LANDMARK_NAMES, ANGLE_DEFINITIONS
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-def calculate_feature_matrix(loaded_landmark_data):
+
+def calculate_feature_matrix(loaded_landmark_data, norm_std_flag=None):
     # TODO: if i give flag ,"Norm" or ,"Std", it should give back the data accordingly
     # Extract x, y, z coordinates and transpose
     feature_coordinates = np.array(loaded_landmark_data)[:, ::4]
@@ -54,6 +56,13 @@ def calculate_feature_matrix(loaded_landmark_data):
     
     # Check briefly the "health" of the features (e.g. if NaNs, Inf are found)
     check_feature_health(final_feature_matrix, num_landmarks)
+    
+    # Normalize or standardize if needed
+    if norm_std_flag == "norm":
+        final_feature_matrix = MinMaxScaler().fit_transform(final_feature_matrix.T).T
+    elif norm_std_flag == "std":
+        final_feature_matrix = StandardScaler().fit_transform(final_feature_matrix.T).T
+    
     
     # Generate row descriptions
     descriptors = []

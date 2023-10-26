@@ -17,7 +17,7 @@ file_path = select_raw_landmark_files("raw_worldlandmarks")[0]
 loaded_landmark_data = np.load(file_path)
 
 # Calculate the final feature matrix
-final_feature_matrix, num_landmarks, descriptors = calculate_feature_matrix(loaded_landmark_data)
+final_feature_matrix, num_landmarks, descriptors = calculate_feature_matrix(loaded_landmark_data,None)
 
 # Construct paths based on the selected landmarks file
 base_dir = os.getcwd()

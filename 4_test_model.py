@@ -15,7 +15,7 @@ file_path = select_raw_landmark_files("raw_worldlandmarks/test")
 loaded_landmark_data = np.load(file_path[0])
 
 # Calculate the final feature matrix
-final_feature_matrix, num_landmarks, _ = calculate_feature_matrix(loaded_landmark_data)
+final_feature_matrix, num_landmarks, _ = calculate_feature_matrix(loaded_landmark_data,None)
 
 # Constructing labels CSV and video path based on the selected landmarks file
 base_name = os.path.basename(file_path[0]).replace("_raw_worldlandmarks.npy", "")
