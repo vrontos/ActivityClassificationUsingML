@@ -5,6 +5,7 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 from tkinter import ttk
 from tkinter import filedialog
+from collections import deque
 
 DESIRED_LANDMARKS = [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 
@@ -292,3 +293,22 @@ def plot_feature_importances(clf, descriptors):
     plt.ylabel('Importance')
     plt.title('Feature Group Importances')
     plt.show()
+
+def smooth_data(data, alpha, history_length):
+    num_features, num_frames = data.shape
+    history = [deque(maxlen=history_length) for _ in range(num_features)]
+    smoothed_data = np.zeros_like(data)
+    
+    for frame_idx in range(num_frames):
+        for feature_idx in range(num_features):
+            if not np.isnan(data[feature_idx, frame_idx]):
+                history[feature_idx].append(data[feature_idx, frame_idx])
+                avg = np.mean(history[feature_idx])
+                smoothed_data[feature_idx, frame_idx] = alpha * data[feature_idx, frame_idx] + (1 - alpha) * avg
+            elif history[feature_idx]:
+                avg = np.mean(history[feature_idx])
+                smoothed_data[feature_idx, frame_idx] = (1 - alpha) * avg
+            else:
+                smoothed_data[feature_idx, frame_idx] = np.nan
+                
+    return smoothed_data

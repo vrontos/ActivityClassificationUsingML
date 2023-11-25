@@ -1,10 +1,9 @@
 import numpy as np
-from utils import interpolate_nans, angle_between_three_points, check_feature_health, DESIRED_LANDMARK_NAMES, ANGLE_DEFINITIONS
+import matplotlib.pyplot as plt
+from utils import interpolate_nans, angle_between_three_points, check_feature_health, DESIRED_LANDMARK_NAMES, ANGLE_DEFINITIONS, smooth_data
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-
 def calculate_feature_matrix(loaded_landmark_data, norm_std_flag=None):
-    # TODO: if i give flag ,"Norm" or ,"Std", it should give back the data accordingly
     # Extract x, y, z coordinates and transpose
     feature_coordinates = np.array(loaded_landmark_data)[:, ::4]
     feature_coordinates = np.hstack((feature_coordinates, loaded_landmark_data[:, 1::4]))
@@ -13,6 +12,22 @@ def calculate_feature_matrix(loaded_landmark_data, norm_std_flag=None):
 
     # Interpolate NaNs for coordinates
     feature_coordinates_interpolated = interpolate_nans(feature_coordinates.copy())
+    
+    # Smooth landmark coordinates: alpha controls the smoothness, and history_length defines the window size.
+    feature_coordinates_smoothed = smooth_data(feature_coordinates_interpolated, alpha=0.5, history_length=5) # alpha=1 -> no filtering, alpha=0.5 -> very light smooth, alpha=0.01 -> heavy smooth
+    
+    # Plot all rows of interpolated data
+    for row in feature_coordinates_interpolated:
+        plt.plot(row, color='blue', alpha=0.2, label='Interpolated')
+    # Plot all rows of smoothed data
+    for row in feature_coordinates_smoothed:
+        plt.plot(row, color='orange', alpha=0.2, label='Smoothed')
+    plt.title('Interpolated vs Smoothed Data (Joint Coordinates)')
+    plt.xlabel('Time or Frame Index')
+    plt.ylabel('Value')
+    plt.show()
+
+    feature_coordinates_interpolated = feature_coordinates_smoothed;
 
     # Calculate velocities
     feature_velocities = np.hstack((np.zeros((feature_coordinates_interpolated.shape[0], 1)), np.diff(feature_coordinates_interpolated, axis=1)))
