@@ -43,7 +43,6 @@ In order to make sure that the feature matrix has valid values we visualize diff
 
 - `display_feature_matrix.py`: This script plays back the video that corresponds to the selected raw landmarks, while it displays the chosen features (e.g. position of landmark, velocity of landmark).
 - `animate_feature_matrix.py`: *maybe change it to animate_landmarks.py*
-- `TODO: plot_feature_matrix.py` 
 
 ## 7. Train the model
 Use the script `train_3d_model.py` to train the Random Forest model.
@@ -54,4 +53,3 @@ As meta-features, we use:
 - std
 - min
 - max
-- TODO: skewness
